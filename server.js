@@ -16,8 +16,7 @@ app.use(function errorHandler(err, req, res, next) {
     res.render('error', { error: err });
 });
 
-
-var filename = __dirname + '/scratch/hs.xml';
+var filename = __dirname + '/scripts/out/mapnik.xml';
 
 tilelive.load('mapnik://' + filename, function(err, source) {
     if (err) throw err;
