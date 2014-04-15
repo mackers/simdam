@@ -34,8 +34,16 @@ $(function () {
         var type = e.layerType,
             layer = e.layer;
 
-        if (type === 'marker') {
+        if (type === 'polyline') {
             // Do marker specific actions
+            var start = layer.getLatLngs()[0];
+            var end = layer.getLatLngs()[1];
+
+            $.post('/napa/save_dam_crest/' +
+                start.lat + '/' + start.lng + '/' +
+                end.lat + '/' + end.lng, function (data) {
+                console.log('have saved dam crest');
+            });
         }
 
         // Do whatever else you need to. (save to db, add to map etc)
@@ -60,8 +68,11 @@ $(function () {
 
             $(document).trigger('damfine:has_receiving_altitude_match_points', {latlngs: latlngs});
         });
+    });
 
-
+    $(document).on('damfine:have_created_dam_crest', function (event, latlng1, latlng2) {
+        console.log(latlng1);
+        console.log(latlng2);
     });
 
 });

@@ -3,8 +3,7 @@
   "private": true,
   "dependencies": {
     "jquery": "~1.10.2",
-    "leaflet": "~0.7.2",
-//    "leaflet.draw": "~0.2.3"
+    "leaflet": "~0.7.2"
   },
   "devDependencies": {}
 }

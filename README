@@ -1,0 +1,4 @@
+grunt serve
+
+
+cd public/lib/leaflet.draw_damfine/ && jake
