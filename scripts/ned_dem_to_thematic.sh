@@ -6,7 +6,7 @@
 
 OUT_DIRECTORY=`pwd`/out
 MAPNIK_XML=$OUT_DIRECTORY/mapnik.xml
-TMP_DEM=/tmp/dem_web_merc.geotiff
+OUT_DEM_WEBMERC=$OUT_DIRECTORY/dem_webmerc.geotiff
 OUT_HILLSHADE=$OUT_DIRECTORY/dem_hillshade.geotiff
 TMP_SLOPE=/tmp/dem_slope.geotiff
 TMP_SLOPE_SHADE_INDEX=/tmp/slope_shade_index.txt
@@ -14,6 +14,7 @@ OUT_COLOR_RELIEF=$OUT_DIRECTORY/dem_color.geotiff
 TMP_COLOR_RELIEF_INDEX=/tmp/color_relief_index.txt
 OUT_SLOPE_SHADE=$OUT_DIRECTORY/dem_slope_shade.geotiff
 COUNTRIES=/Users/mackers/Documents/MapBox/project/hillshade1/layers/countries/82945364-10m-admin-0-countries.shp
+OUT_SQL=$OUT_DIRECTORY/`basename $1`.sql
 
 if [ ! -d "$OUT_DIRECTORY" ]; then
   # Control will enter here if $DIRECTORY doesn't exist.
@@ -22,13 +23,16 @@ if [ ! -d "$OUT_DIRECTORY" ]; then
 fi
 
 # reproject ned dem to web mercator
-gdalwarp -r bilinear -s_srs EPSG:4269 -t_srs EPSG:3857 $1 $TMP_DEM
+gdalwarp -r bilinear -s_srs EPSG:4269 -t_srs EPSG:3857 $1 $OUT_DEM_WEBMERC
+
+# create psql import script
+#raster2pgsql -c -C $OUT_DEM_WEBMERC > $OUT_SQL
 
 # create hillshade
-gdaldem hillshade $TMP_DEM $OUT_HILLSHADE
+gdaldem hillshade $OUT_DEM_WEBMERC $OUT_HILLSHADE
 
 # create slope shading
-gdaldem slope $TMP_DEM $TMP_SLOPE
+gdaldem slope $OUT_DEM_WEBMERC $TMP_SLOPE
 cat > $TMP_SLOPE_SHADE_INDEX <<EOM
 0 255 255 255
 90 0 0 0
@@ -43,7 +47,7 @@ cat > $TMP_COLOR_RELIEF_INDEX <<EOM
 1500 220 220 220
 2500 250 250 250
 EOM
-gdaldem color-relief $TMP_DEM $TMP_COLOR_RELIEF_INDEX $OUT_COLOR_RELIEF
+gdaldem color-relief $OUT_DEM_WEBMERC $TMP_COLOR_RELIEF_INDEX $OUT_COLOR_RELIEF
 
 # output xml
 cat > $MAPNIK_XML << EOM
@@ -125,7 +129,6 @@ cat > $MAPNIK_XML << EOM
 EOM
 
 # delete temporary files
-rm $TMP_DEM
 rm $TMP_SLOPE
 rm $TMP_SLOPE_SHADE_INDEX
 rm $TMP_COLOR_RELIEF_INDEX
