@@ -27,7 +27,8 @@ app.get('/napa/points_at_level_near/:lat/:lng/', function (req, res) {
 //    var q = pgc.query('select COUNT(rid) AS count from ned19_n38x50_w122x25_ca_sanfrancisco_topobathy_2010');
 
 //    var q = pgc.query('WITH bar AS (WITH foo AS (SELECT ST_Clip(rast, 1, ST_Expand(ST_SetSRID(ST_MakePoint(-122.16454, 38.30273), 4269), 0.0001), true) AS rast FROM ned19_n38x50_w122x25_ca_sanfrancisco_topobathy_2010)    SELECT ST_MapAlgebra(rast, 1, NULL, \'CASE WHEN (abs([rast] - 505) < 10) THEN [rast] ELSE NULL END\') AS rast FROM foo)    SELECT x, y, val, st_asgeojson(geom) as j FROM (SELECT (ST_PixelAsPoints(rast)).* FROM bar) AS bar2');
-    var qstr = 'select * from points_nearby_same_height(ST_SetSRID(ST_MakePoint(' +
+
+    var qstr = 'select * from points_nearby_equal_altitude(ST_SetSRID(ST_MakePoint(' +
         req.param('lng') +
         ', ' +
         req.param('lat') +
@@ -71,7 +72,7 @@ app.post('/napa/save_dam_crest/:startlat/:startlng/:endlat/:endlng', function (r
 
     // TODO user id
 
-    var qstr = 'insert into dam_crests(user_id, crest) values (0, ' +
+    var qstr = 'insert into dams(user_id, crest) values (0, ' +
         'ST_GeomFromText(\'LINESTRING(' +
         req.param('startlng') + ' ' + req.param('startlat') + ', ' +
         req.param('endlng') + ' ' + req.param('endlat') + ')\', 4269))';
