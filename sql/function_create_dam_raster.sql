@@ -7,6 +7,8 @@ DECLARE
     dam_raster raster;
     scalex double precision;
     scaley double precision;
+    w integer;
+    h integer;
 
 BEGIN
 
@@ -24,12 +26,18 @@ BEGIN
     select ST_ScaleX(rast) INTO scalex FROM areas;
     select ST_ScaleY(rast) INTO scaley FROM areas;
 
+    select ST_Width(rast) INTO w FROM areas;
+    select ST_Height(rast) INTO h FROM areas;
+
     -- convert dam_crest geometry to raster
     -- altitude of dam is altitude of raster at first point of crest
 
         -- raster ST_AsRaster(geometry geom, raster ref, text pixeltype, double precision value=1, double precision nodataval=0, boolean touched=false);
 
-    dam_raster := ST_AsRaster(dam_crest, scalex, scaley, '2BUI', altitude);
+    select ST_AsRaster(dam_crest, rast, '8BUI', altitude, 0) into dam_raster from areas;
+
+    -- raise notice 'width of source raster: %', w;
+    -- raise notice 'width of dam raster: %', st_width(dam_raster);
 
     return dam_raster;
 
