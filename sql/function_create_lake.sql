@@ -1,4 +1,4 @@
-create or replace function lake_floodfill (columnx integer, rowy integer, h double precision, i raster, dam_id integer) 
+create or replace function lake_floodfill (columnx integer, rowy integer, a double precision, i raster, dam_id integer) 
 returns void as $$
 
 DECLARE
@@ -6,31 +6,40 @@ DECLARE
     alt_at_point double precision;
     dam_at_point double precision;
     io raster;
+    w integer;
+    h integer;
     -- p geometry;
 
 BEGIN
 
-    -- raise notice 'in lake_floodfill';
+    -- raise notice 'in lake_floodfill, altitude: %', a;
+    -- raise notice '%,% <-- this point is next', columnx, rowy;
 
     select scratch into io from dams where id = dam_id;
+
+    w := st_width(io);
+    h := st_height(io);
+
+    if columnx < 0 or rowy < 0 or columnx > w or rowy > h then
+        return;
+    end if;
 
     alt_at_point := st_value(io, 1, columnx, rowy);
 
     if alt_at_point = 1 then
-
-        -- raise notice 'have a filled point: %,%', columnx, rowy;
         -- raise notice '%,% <-- this point is filled', columnx, rowy;
-
         return;
-
     end if;
 
     alt_at_point := st_value(i, 1, columnx, rowy);
 
-    -- raise notice 'in lake_floodfill with p: %', st_astext(p);
-    -- raise notice 'altitude at study point vs h: % vs %', alt_at_point, h;
+    -- raise notice '%,% <-- point has altitude of: %', columnx, rowy, alt_at_point;
 
-    if alt_at_point > h - 1 then
+    if alt_at_point is null then
+        return;
+    end if;
+
+    if alt_at_point > a - 1 then
 
         -- raise notice '%,% <-- this point is too damn high', columnx, rowy;
 
@@ -44,12 +53,12 @@ BEGIN
 
     update dams set scratch = io where id = dam_id;
 
-    -- raise notice 'out: %', st_asgeojson(st_setsrid(ST_polygon(io), 4269));
+    -- raise notice 'out: %', st_asgeojson( st_setsrid(ST_Polygon(io), 4269) );
 
-    perform lake_floodfill(columnx+1, rowy, h, i, dam_id);
-    perform lake_floodfill(columnx-1, rowy, h, i, dam_id);
-    perform lake_floodfill(columnx, rowy+1, h, i, dam_id);
-    perform lake_floodfill(columnx, rowy-1, h, i, dam_id);
+    perform lake_floodfill(columnx+1, rowy, a, i, dam_id);
+    perform lake_floodfill(columnx-1, rowy, a, i, dam_id);
+    perform lake_floodfill(columnx, rowy+1, a, i, dam_id);
+    perform lake_floodfill(columnx, rowy-1, a, i, dam_id);
 
 END;
 $$ LANGUAGE plpgsql;
@@ -70,7 +79,9 @@ BEGIN
     insert into rasters select rast from dams where id = dam_id;
 
     select ST_Union(rast, 'MAX'::text) into ret_rast from rasters;
-    select ST_line_interpolate_point(crest, 0.5) INTO ref_point from dams;
+    select ST_line_interpolate_point(crest, 0.5) INTO ref_point from dams where id = dam_id;
+
+    discard temp;
 
     return ST_Clip(ret_rast, 1, ST_Expand(ref_point, 0.001), true);
 
@@ -81,7 +92,7 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION create_lake (dam_id integer)
-RETURNS void AS $$
+RETURNS geometry AS $$
 
 DECLARE
     lake_geom geometry;
@@ -104,7 +115,12 @@ DECLARE
     study_area_id integer;
     lake_rast raster;
     area_and_dam_rast raster;
+    dam_raster raster;
 BEGIN
+
+    select create_dam_raster(dam_id) into dam_raster;
+
+    update dams set rast = dam_raster where id = dam_id;
 
     Select crest into dam_crest from dams where id = dam_id;
 
@@ -147,6 +163,9 @@ BEGIN
         fill_point := point_90_45;
     end if;
 
+    -- raise notice 'dam_crest_midpoint: %', st_asgeojson(dam_crest_midpoint);
+    raise notice 'fill_point: %', st_asgeojson(fill_point);
+
     -- create a raster of study area + dam
     area_and_dam_rast := create_composite_raster(dam_id);
 
@@ -186,16 +205,18 @@ BEGIN
 
     lake_geom := st_setsrid(ST_Polygon(lake_rast), 4269);
 
-    -- raise notice 'lake_geom: %', st_asgeojson(lake);
+    -- raise notice 'lake_geom: %', st_asgeojson(lake_geom);
 
     update dams set lake2 = lake_geom where id = dam_id;
 
     -- raise notice 'finished';
+
+    return lake_geom;
 
 END;
 $$ LANGUAGE plpgsql;
 
 -- UPDATE dams set lake2 = create_lake(1, 'napa') where id = 1;
 
-select create_lake(1);
+select create_lake(20);
 
