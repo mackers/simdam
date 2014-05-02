@@ -1,9 +1,25 @@
 -- CREATE OR REPLACE FUNCTION create_dam_raster (dam_crest geometry, area text)
 CREATE OR REPLACE FUNCTION create_dam_raster (dam_id integer)
 RETURNS RASTER AS $$
-
 DECLARE
     dam_crest geometry;
+
+BEGIN
+
+    select crest into dam_crest from dams where id = dam_id;
+
+    return create_dam_raster(dam_id, dam_crest);
+
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+CREATE OR REPLACE FUNCTION create_dam_raster (dam_id integer, dam_crest geometry)
+RETURNS RASTER AS $$
+
+
+DECLARE
     start_point geometry;
     altitude double precision;
     dam_raster raster;
@@ -20,7 +36,6 @@ BEGIN
         -- geometry ST_Buffer(geometry g1, float radius_of_buffer);
         -- raster ST_Clip(raster rast, geometry geom, boolean crop);
 
-    select crest into dam_crest from dams where id = dam_id;
     select study_area into area_id from dams where id = dam_id;
 
     -- get altitude of first point

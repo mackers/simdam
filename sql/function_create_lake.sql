@@ -39,7 +39,7 @@ BEGIN
         return;
     end if;
 
-    if alt_at_point > a - 1 then
+    if alt_at_point > a then
 
         -- raise notice '%,% <-- this point is too damn high', columnx, rowy;
 
@@ -118,11 +118,16 @@ DECLARE
     dam_raster raster;
 BEGIN
 
+    -- extend crest here
+    
+    select crest into dam_crest from dams where id = dam_id;
+
+    raise notice 'crest before scale: %', st_asgeojson(dam_crest);
+    dam_crest := ST_Scale(dam_crest, 1.00001, 1.00001);
+    raise notice 'crest after scale: %', st_asgeojson(dam_crest);
+
     select create_dam_raster(dam_id) into dam_raster;
-
     update dams set rast = dam_raster where id = dam_id;
-
-    Select crest into dam_crest from dams where id = dam_id;
 
     -- first point in dam_crest
     start_point := ST_PointN(dam_crest, 1);
@@ -164,6 +169,7 @@ BEGIN
     end if;
 
     -- raise notice 'dam_crest_midpoint: %', st_asgeojson(dam_crest_midpoint);
+    raise notice 'dam_crest: %', st_asgeojson(dam_crest);
     raise notice 'fill_point: %', st_asgeojson(fill_point);
 
     -- create a raster of study area + dam
@@ -218,5 +224,5 @@ $$ LANGUAGE plpgsql;
 
 -- UPDATE dams set lake2 = create_lake(1, 'napa') where id = 1;
 
-select create_lake(20);
+select st_asgeojson(create_lake(28));
 
