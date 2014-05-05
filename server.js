@@ -3,6 +3,7 @@
 var express = require('express'),
     app = express(),
     tilelive = require('tilelive'),
+    tilecache = require('tilelive-cache')(tilelive, {size: 50}),
     pg = require('pg').native,
     pgc,
     pgConnectionString = 'postgres://localhost:5432/gis';
@@ -114,7 +115,7 @@ app.use(function errorHandler(err, req, res, next) {
 
 var filename = __dirname + '/scripts/out/mapnik.xml';
 
-tilelive.load('mapnik://' + filename, function(err, source) {
+tilecache.load('mapnik://' + filename, function(err, source) {
     if (err) { throw err; }
     app.get('/:z/:x/:y.*', function(req, res) {
         source.getTile(req.param('z'), req.param('x'), req.param('y'), function(err, tile, headers) {
