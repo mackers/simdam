@@ -63,6 +63,96 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION get_upstream_fill_point (dam_id integer)
+RETURNS geometry AS $$
+DECLARE
+BEGIN
+    return get_fill_point(dam_id, true);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_downstream_fill_point (dam_id integer)
+RETURNS geometry AS $$
+DECLARE
+BEGIN
+    return get_fill_point(dam_id, false);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_fill_point (dam_id integer, upstream boolean)
+RETURNS geometry AS $$
+DECLARE
+
+    study_area_id integer;
+    dam_crest geometry;
+    start_point geometry;
+    end_point geometry;
+    fill_point geometry;
+    dam_crest_midpoint geometry;
+    dam_crest_90 geometry;
+    point_90_55 geometry;
+    point_90_45 geometry;
+    altitude_90_55 double precision;
+    altitude_90_45 double precision;
+    altitude double precision;
+    pixel_width double precision;
+    fraction double precision;
+
+BEGIN
+    select crest into dam_crest from dams where id = dam_id;
+
+    -- first point in dam_crest
+    start_point := ST_PointN(dam_crest, 1);
+    end_point := ST_PointN(dam_crest, 2);
+
+    -- -- get middle point of dam_crest
+    SELECT ST_line_interpolate_point(dam_crest, 0.5) INTO dam_crest_midpoint;
+
+    -- -- 90deg line
+    SELECT
+        ST_Rotate(
+            dam_crest,
+            pi()/2,
+            dam_crest_midpoint)
+        INTO dam_crest_90;
+
+    -- -- 90deg point
+    -- RAISE NOTICE 'dam_crest: %', ST_AsText(dam_crest);
+    -- RAISE NOTICE 'dam_crest_90: %', ST_AsText(dam_crest_90);
+
+    -- RAISE NOTICE 'midpoint: %', ST_AsText(ST_line_interpolate_point(dam_crest, 0.5));
+    -- RAISE NOTICE 'midpoint_90_55: %', ST_AsText(ST_line_interpolate_point(dam_crest_90, 0.55));
+    -- RAISE NOTICE 'midpoint_90_45: %', ST_AsText(ST_line_interpolate_point(dam_crest_90, 0.45));
+
+    -- TODO get point one grid unit away.
+
+    select ST_PixelWidth(areas.rast) into pixel_width from areas left join dams on areas.rid = dams.study_area where dams.id = dam_id;
+
+    fraction := pixel_width / st_distance(start_point, end_point);
+
+    -- raise notice 'pixel width: %', pixel_width;
+    -- raise notice 'fraction: %', fraction;
+
+    SELECT ST_line_interpolate_point(dam_crest_90, 0.5 + fraction) INTO point_90_55;
+    SELECT ST_line_interpolate_point(dam_crest_90, 0.5 - fraction) INTO point_90_45;
+
+    select study_area into study_area_id from dams where id = dam_id;
+
+    SELECT ST_Value(rast, point_90_55) INTO altitude_90_55 FROM areas where rid = study_area_id;
+    SELECT ST_Value(rast, point_90_45) INTO altitude_90_45 FROM areas where rid = study_area_id;
+
+    select st_value(rast, start_point) into altitude from areas where rid = study_area_id;
+
+    if altitude_90_55 > altitude_90_45 and upstream then
+        fill_point := point_90_55;
+    else
+        fill_point := point_90_45;
+    end if;
+
+    return fill_point;
+
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION create_composite_raster (dam_id integer)
 RETURNS raster AS $$
@@ -97,16 +187,8 @@ RETURNS geometry AS $$
 DECLARE
     lake_geom geometry;
     dam_crest geometry;
-    start_point geometry;
-    end_point geometry;
     altitude double precision;
 
-    dam_crest_midpoint geometry;
-    dam_crest_90 geometry;
-    point_90_45 geometry;
-    point_90_55 geometry;
-    altitude_90_55 double precision;
-    altitude_90_45 double precision;
     fill_point geometry;
     columnx integer;
     rowy integer;
@@ -117,6 +199,7 @@ DECLARE
     area_and_dam_rast raster;
     dam_raster raster;
 BEGIN
+    select study_area into study_area_id from dams where id = dam_id;
 
     -- extend crest here
     
@@ -130,48 +213,16 @@ BEGIN
 
     select rast into dam_raster from dams where id = dam_id;
 
-    -- first point in dam_crest
-    start_point := ST_PointN(dam_crest, 1);
-    end_point := ST_PointN(dam_crest, 2);
-
-    -- -- get middle point of dam_crest
-    SELECT ST_line_interpolate_point(dam_crest, 0.5) INTO dam_crest_midpoint;
-
-    -- -- 90deg line
-    SELECT
-        ST_Rotate(
-            dam_crest,
-            pi()/2,
-            dam_crest_midpoint)
-        INTO dam_crest_90;
-
-    -- -- 90deg point
-    -- RAISE NOTICE 'dam_crest: %', ST_AsText(dam_crest);
-    -- RAISE NOTICE 'dam_crest_90: %', ST_AsText(dam_crest_90);
-
-    -- RAISE NOTICE 'midpoint: %', ST_AsText(ST_line_interpolate_point(dam_crest, 0.5));
-    -- RAISE NOTICE 'midpoint_90_55: %', ST_AsText(ST_line_interpolate_point(dam_crest_90, 0.55));
-    -- RAISE NOTICE 'midpoint_90_45: %', ST_AsText(ST_line_interpolate_point(dam_crest_90, 0.45));
-
-    SELECT ST_line_interpolate_point(dam_crest_90, 0.55) INTO point_90_55;
-    SELECT ST_line_interpolate_point(dam_crest_90, 0.45) INTO point_90_45;
-
-    select study_area into study_area_id from dams where id = dam_id;
-
-    SELECT ST_Value(rast, point_90_55) INTO altitude_90_55 FROM areas where rid = study_area_id;
-    SELECT ST_Value(rast, point_90_45) INTO altitude_90_45 FROM areas where rid = study_area_id;
-
-    select st_value(rast, start_point) into altitude from areas where rid = study_area_id;
-
-    if altitude_90_55 > altitude_90_45 then
-        fill_point := point_90_55;
-    else
-        fill_point := point_90_45;
-    end if;
-
     -- raise notice 'dam_crest_midpoint: %', st_asgeojson(dam_crest_midpoint);
     raise notice 'dam_crest: %', st_asgeojson(dam_crest);
+
+    fill_point := get_upstream_fill_point(1);
+
     raise notice 'fill_point: %', st_asgeojson(fill_point);
+
+    select st_value(rast, ST_PointN(dam_crest, 1)) into altitude from areas where rid = study_area_id;
+
+    raise notice 'altitude at start_point: %', altitude;
 
     -- create a raster of study area + dam
     area_and_dam_rast := create_composite_raster(dam_id);
@@ -223,7 +274,5 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- UPDATE dams set lake2 = create_lake(1, 'napa') where id = 1;
-
-select st_asgeojson(create_lake(39));
+select st_asgeojson(create_lake(1));
 
