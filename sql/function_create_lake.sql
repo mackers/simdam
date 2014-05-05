@@ -163,17 +163,16 @@ DECLARE
     study_area_id integer;
 BEGIN
     select study_area into study_area_id from dams where id = dam_id;
-
-    create temporary table rasters (rast raster);
-    insert into rasters select rast from areas where rid = study_area_id;
-    insert into rasters select rast from dams where id = dam_id;
-
-    select ST_Union(rast, 'MAX'::text) into ret_rast from rasters;
     select ST_line_interpolate_point(crest, 0.5) INTO ref_point from dams where id = dam_id;
 
+    create temporary table rasters (rast raster);
+    insert into rasters select ST_Clip(rast, 1, ST_Expand(ref_point, 0.0015), true) from areas where rid = study_area_id;
+    insert into rasters select rast from dams where id = dam_id;
+    select ST_Union(rast, 'MAX'::text) into ret_rast from rasters;
     discard temp;
 
-    return ST_Clip(ret_rast, 1, ST_Expand(ref_point, 0.0015), true);
+    -- return ST_Clip(ret_rast, 1, ST_Expand(ref_point, 0.0015), true);
+    return ret_rast;
 
     --return ret_rast;
 END;
@@ -275,4 +274,5 @@ END;
 $$ LANGUAGE plpgsql;
 
 select st_asgeojson(create_lake(1));
+-- update dams set scratch = create_composite_raster(1) where id = 1;
 
