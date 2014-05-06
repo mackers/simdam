@@ -1,5 +1,5 @@
 -- CREATE OR REPLACE FUNCTION create_dam_raster (dam_crest geometry, area text)
-CREATE OR REPLACE FUNCTION create_dam_raster (dam_id integer)
+CREATE OR REPLACE FUNCTION create_dam_crest_raster (dam_id integer)
 RETURNS void AS $$
 
 DECLARE

@@ -212,7 +212,7 @@ BEGIN
     -- dam_crest := ST_Scale(dam_crest, 1.00001, 1.00001);
     raise notice 'crest after scale: %', st_asgeojson(dam_crest);
 
-    perform create_dam_raster(dam_id);
+    perform create_dam_crest_raster(dam_id);
 
     select rast into dam_raster from dams where id = dam_id;
 
