@@ -124,17 +124,13 @@ BEGIN
     -- RAISE NOTICE 'midpoint_90_55: %', ST_AsText(ST_line_interpolate_point(dam_crest_90, 0.55));
     -- RAISE NOTICE 'midpoint_90_45: %', ST_AsText(ST_line_interpolate_point(dam_crest_90, 0.45));
 
-    -- TODO get point one grid unit away.
+    -- select ST_PixelWidth(areas.rast) into pixel_width from areas left join dams on areas.rid = dams.study_area where dams.id = dam_id;
+    -- fraction := pixel_width / st_distance(start_point, end_point);
+    -- SELECT ST_line_interpolate_point(dam_crest_90, 0.5 + fraction) INTO point_90_55;
+    -- SELECT ST_line_interpolate_point(dam_crest_90, 0.5 - fraction) INTO point_90_45;
 
-    select ST_PixelWidth(areas.rast) into pixel_width from areas left join dams on areas.rid = dams.study_area where dams.id = dam_id;
-
-    fraction := pixel_width / st_distance(start_point, end_point);
-
-    -- raise notice 'pixel width: %', pixel_width;
-    -- raise notice 'fraction: %', fraction;
-
-    SELECT ST_line_interpolate_point(dam_crest_90, 0.5 + fraction) INTO point_90_55;
-    SELECT ST_line_interpolate_point(dam_crest_90, 0.5 - fraction) INTO point_90_45;
+    SELECT ST_line_interpolate_point(dam_crest_90, 0.55) INTO point_90_55;
+    SELECT ST_line_interpolate_point(dam_crest_90, 0.45) INTO point_90_45;
 
     select study_area into study_area_id from dams where id = dam_id;
 
@@ -143,10 +139,18 @@ BEGIN
 
     select st_value(rast, start_point) into altitude from areas where rid = study_area_id;
 
-    if altitude_90_55 > altitude_90_45 and upstream then
-        fill_point := point_90_55;
-    else
-        fill_point := point_90_45;
+    if upstream then
+        if altitude_90_55 > altitude_90_45 then
+            fill_point := point_90_55;
+        else
+            fill_point := point_90_45;
+        end if;
+    else 
+        if altitude_90_55 < altitude_90_45 then
+            fill_point := point_90_55;
+        else
+            fill_point := point_90_45;
+        end if;
     end if;
 
     return fill_point;
@@ -273,6 +277,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-select st_asgeojson(create_lake(1));
+-- select st_asgeojson(create_lake(1));
 -- update dams set scratch = create_composite_raster(1) where id = 1;
 

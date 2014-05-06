@@ -14,4 +14,5 @@ ALTER table dams ADD column scratch raster;
 ALTER table dams ADD column study_area integer;
 ALTER table dams ADD column dam_height_rast raster;
 ALTER table dams ADD column dam_height float;
+ALTER table dams ADD column scratch2 raster;
 
