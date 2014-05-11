@@ -286,7 +286,11 @@ BEGIN
             encode(
                 st_aspng(
                     st_colormap(
-                        rast,
+                        st_resize(
+                            rast,
+                            500,
+                            500
+                        ),
                         1,
                         'pseudocolor',
                         'EXACT'
