@@ -278,6 +278,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- select st_asgeojson(create_lake(1));
+select st_asgeojson(create_lake(1));
 -- update dams set scratch = create_composite_raster(1) where id = 1;
 

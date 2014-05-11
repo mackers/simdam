@@ -1,7 +1,7 @@
 rm /tmp/raster.hex
 rm /tmp/raster.tiff
 
-psql gis -c "COPY (SELECT encode(ST_AsTiff(rast), 'hex') FROM dams WHERE id = 1) TO '/tmp/raster.hex'";
+psql gis -c "COPY (SELECT encode(ST_AsTiff(scratch), 'hex') FROM dams WHERE id = 1) TO '/tmp/raster.hex'";
 
 #psql gis -c "COPY (
     #SELECT encode(

@@ -258,5 +258,70 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-select create_dam_and_slope_raster(1);
+
+
+CREATE OR REPLACE FUNCTION dam_as_png (dam_id integer)
+RETURNS table (dam text, upperleft text, lowerright text) AS $$
+
+DECLARE
+    h integer;
+    w integer;
+BEGIN
+
+    perform create_dam_and_slope_raster(dam_id);
+
+    select st_width(rast) into w from dams where id = dam_id;
+    select st_height(rast) into h from dams where id = dam_id;
+
+
+    update dams set scratch = st_colormap(
+        rast,
+        1,
+        'pseudocolor'
+    ) where id = dam_id;
+
+    return query (
+        select
+            'data:image/png;base64,' ||
+            encode(
+                st_aspng(
+                    st_colormap(
+                        rast,
+                        1,
+                        'pseudocolor',
+                        'EXACT'
+                    ),
+                    ARRAY['ZLEVEL=1']
+                    ),
+                'base64'
+                ),
+            st_asgeojson(
+                ST_SetSRID(
+                    ST_MakePoint(
+                        ST_RasterToWorldCoordX(rast, 0, 0),
+                        ST_RasterToWorldCoordY(rast, 0, 0)
+                    ),
+                    4269
+                )
+            ),
+            st_asgeojson(ST_SetSRID(
+                    ST_MakePoint(
+                        ST_RasterToWorldCoordX(rast, w, h),
+                        ST_RasterToWorldCoordY(rast, w, h)
+                    ),
+                    4269
+                )
+            )
+            from dams
+            where id = dam_id
+        );
+
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- select create_dam_and_slope_raster(1);
+-- select dam_as_png(1);
+
+
 

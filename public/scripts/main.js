@@ -69,18 +69,40 @@ $(function () {
     });
 
     $(document).on('damfine:create_lake', function (event, dam) {
-        console.log('will create of lake for dam id = ' + dam.id);
+        console.log('will create lake for dam id = ' + dam.id);
         
         $.get('/napa/create_lake/' + dam.id, function (data) {
-            if (data.result === 'error') {
+            if (data.result === 'error' || !data.payload) {
                 window.alert('Could not create a lake model at this location');
             } else if (data.result === 'ok') {
                 // create lake layer from geojson payload
                 dam.lakeLayer = L.geoJson(data.payload);
                 dam.lakeLayer.addTo(map);
+
+                $(document).trigger('damfine:create_dam', dam);
             }
         });
     });
+
+    $(document).on('damfine:create_dam', function (event, dam) {
+        console.log('will create dam for dam id = ' + dam.id);
+        
+        $.get('/napa/create_dam/' + dam.id, function (data) {
+            if (data.result === 'error' || !data.payload.dam) {
+                window.alert('Could not create a dam model at this location');
+            } else if (data.result === 'ok') {
+                var imageBounds = L.latLngBounds(
+                    L.GeoJSON.coordsToLatLng(data.payload.upperleft.coordinates, true),
+                    L.GeoJSON.coordsToLatLng(data.payload.lowerright.coordinates, true));
+
+                dam.damLayer = L.imageOverlay(
+                    data.payload.dam,
+                    imageBounds);
+                dam.damLayer.addTo(map);
+            }
+        });
+    });
+
 
     $(document).on('damfine:has_defined_crest_first_point', function (event, param1) {
         console.log('got damfine:firstpoint, param1 = ' + param1.latlng.lat);

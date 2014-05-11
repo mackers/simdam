@@ -107,6 +107,34 @@ app.get('/napa/create_lake/:dam_id', function (req, res) {
     });
 });
 
+app.get('/napa/create_dam/:dam_id', function (req, res) {
+    var qstr = 'select * from dam_as_png(' + req.param('dam_id') + ')';
+
+    console.log(qstr);
+
+    var q = pgc.query(qstr);
+    var r = [];
+
+    q.on('error', function(error) {
+        console.log(error);
+        res.send(500, {'result': 'error'});
+    });
+
+    var payload = {};
+
+    q.on('row', function(row, result) {
+        if (row.dam) {
+            payload.dam = row.dam;
+            payload.upperleft = JSON.parse(row.upperleft);
+            payload.lowerright = JSON.parse(row.lowerright);
+        }
+    });
+
+    q.on('end', function(result) {
+        res.json({'result': 'ok', 'payload': payload});
+    });
+});
+
 
 app.use(function errorHandler(err, req, res, next) {
     res.status(500);
