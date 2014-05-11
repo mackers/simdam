@@ -129,8 +129,8 @@ BEGIN
     -- SELECT ST_line_interpolate_point(dam_crest_90, 0.5 + fraction) INTO point_90_55;
     -- SELECT ST_line_interpolate_point(dam_crest_90, 0.5 - fraction) INTO point_90_45;
 
-    SELECT ST_line_interpolate_point(dam_crest_90, 0.55) INTO point_90_55;
-    SELECT ST_line_interpolate_point(dam_crest_90, 0.45) INTO point_90_45;
+    SELECT ST_line_interpolate_point(dam_crest_90, 0.6) INTO point_90_55;
+    SELECT ST_line_interpolate_point(dam_crest_90, 0.4) INTO point_90_45;
 
     select study_area into study_area_id from dams where id = dam_id;
 
@@ -212,6 +212,7 @@ BEGIN
     -- dam_crest := ST_Scale(dam_crest, 1.00001, 1.00001);
     raise notice 'crest after scale: %', st_asgeojson(dam_crest);
 
+    -- TODO should 
     perform create_dam_crest_raster(dam_id);
 
     select rast into dam_raster from dams where id = dam_id;
