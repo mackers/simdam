@@ -123,6 +123,9 @@ BEGIN
     perform create_dam_crest_raster(dam_id);
     area_and_dam_rast := create_composite_raster(dam_id);
 
+    raise notice 'width of composite: %', st_width(area_and_dam_rast);
+    raise notice 'scale of composite: %', st_scalex(area_and_dam_rast);
+
     -- get upstream ref_point
     upstream_fill_point := get_upstream_fill_point(dam_id);
     raise notice 'upstream_fill_point: %', st_asgeojson(upstream_fill_point);
@@ -130,12 +133,14 @@ BEGIN
     raise notice 'downstream_fill_point: %', st_asgeojson(downstream_fill_point);
 
     -- make empty upstream slope raster & put into scratch
-    mask := ST_MakeEmptyRaster(
-        st_width(area_and_dam_rast),
-        st_height(area_and_dam_rast),
-        st_upperleftx(area_and_dam_rast),
-        st_upperlefty(area_and_dam_rast),
-        st_pixelwidth(area_and_dam_rast));
+    -- mask := ST_MakeEmptyRaster(
+        -- st_width(area_and_dam_rast),
+        -- st_height(area_and_dam_rast),
+        -- st_upperleftx(area_and_dam_rast),
+        -- st_upperlefty(area_and_dam_rast),
+        -- st_pixelwidth(area_and_dam_rast));
+    mask := ST_MakeEmptyRaster(area_and_dam_rast);
+
     mask := ST_AddBand(mask,'32BF'::text, 0);
     mask := ST_SetBandNoDataValue(mask, 0);
     mask := ST_SetSrid(mask, 4269);
@@ -155,6 +160,7 @@ BEGIN
     -- update dams set scratch2 = upstream_rast where id = dam_id;
 
     raise notice 'width of mask: %', st_width(mask);
+    raise notice 'scale of mask: %', st_scalex(mask);
     -- update dams set rast = ST_AsRaster(
         -- crest, 
         -- mask,
@@ -166,6 +172,7 @@ BEGIN
     -- perform create_dam_crest_raster(dam_id, mask);
 
     raise notice 'width of rast: %', (select st_width(rast) from dams where id = dam_id);
+    raise notice 'scale of rast: %', (select st_scalex(rast) from dams where id = dam_id);
 
     -- perform slope_fill(x, y, area_and_dam_raster, dam_id);
     perform fill_dam_slope(
@@ -228,14 +235,23 @@ BEGIN
     -- raise notice 'arg1:%', (select ST_MetaData(upstream_rast);
     -- select ST_MetaData(rast) from dams where id = dam_id;
 
-    -- create temporary table rasters (rast raster);
-    -- insert into rasters values (upstream_rast);
-    -- insert into rasters select rast from dams where id = dam_id;
-    -- insert into rasters values (downstream_rast);
-    -- select ST_Union(rast, 'MAX'::text) into ret_rast from rasters;
-    -- discard temp;
+    create temporary table rasters (rast raster);
 
-    -- update dams set rast = ret_rast where id = dam_id;
+    insert into rasters
+        select rast from dams where id = dam_id;
+
+    insert into rasters
+        select st_asraster(
+            (select crest from dams where id = dam_id),
+            (select rast from dams where id = dam_id),
+            '32BF',
+            alt_at_crest,
+            0);
+
+    select ST_Union(rast, 'MAX'::text) into ret_rast from rasters;
+    discard temp;
+
+    update dams set rast = ret_rast where id = dam_id;
 
     raise notice 'finished';
 

@@ -11,6 +11,8 @@ DECLARE
     gridy double precision;
     w integer;
     h integer;
+    skewx double precision;
+    skewy double precision;
     area_id integer;
     dam_crest geometry;
 
@@ -35,17 +37,25 @@ BEGIN
     select ST_Width(ref_rast) INTO w;
     select ST_Height(ref_rast) INTO h;
 
+    select ST_SkewX(ref_rast) INTO skewx;
+    select ST_SkewY(ref_rast) INTO skewy;
+
     raise notice 'width of source raster: %', w;
+
+    -- raster ST_AsRaster(geometry geom, double precision scalex, double precision scaley, text pixeltype, double precision value=1, double precision nodataval=0, double precision upperleftx=NULL, double precision upperlefty=NULL, double precision skewx=0, double precision skewy=0, boolean touched=false);
 
     select ST_AsRaster(
         dam_crest,
-        w,
-        h,
-        gridx,
-        gridy,
+        scalex,
+        scaley,
         '32BF',
         altitude,
-        0) into dam_raster;
+        0,
+        gridx,
+        gridy,
+        skewx,
+        skewy
+    ) into dam_raster;
 
     raise notice 'altitude at start_point (dam raster): %', st_nearestvalue(dam_raster, start_point);
     raise notice 'width of dam raster: %', st_width(dam_raster);
