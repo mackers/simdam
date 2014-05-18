@@ -4,13 +4,35 @@ $(function () {
 
     var map = new L.Map('map', {
         layers: [
-            new L.TileLayer('/{z}/{x}/{y}.png')
-        ],
-        center: new L.LatLng(38.304722, -122.158889),
-        zoom: 13,
-        maxZoom: 20,
-        continuousWorld: true
-    });
+            new L.TileLayer(
+                '/countries/{z}/{x}/{y}.png',
+                {
+                    maxZoom: 13
+                    //attribution: 'TODO'
+                }
+            ),
+
+                new L.TileLayer(
+                    '/napa/{z}/{x}/{y}.png',
+                    {
+                        bounds: [[38.2468, -122.256546], [38.5019673, -121.996994]],
+                        attribution: 'National Elevation Dataset 2013'
+                    }
+                ),
+
+                    new L.TileLayer(
+                    '/buraydah/{z}/{x}/{y}.png',
+                    {
+                        bounds: [[25.99508123, 43.489379], [26.4386062, 44.0029907]],
+                        attribution: 'WorldDEM 2014'
+                    }
+                )
+                ],
+                center: new L.LatLng(38.304722, -122.158889),
+                zoom: 13,
+                maxZoom: 20,
+                continuousWorld: true
+            });
 
     var dams = [];
 
@@ -105,8 +127,6 @@ $(function () {
 
 
     $(document).on('damfine:has_defined_crest_first_point', function (event, param1) {
-        console.log('got damfine:firstpoint, param1 = ' + param1.latlng.lat);
-
         // TODO replace 'napa' here with map name
 
         $.get('/napa/points_at_level_near/' + param1.latlng.lat + '/' + param1.latlng.lng + '/', function (data) {

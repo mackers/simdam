@@ -3,7 +3,7 @@
 var express = require('express'),
     app = express(),
     tilelive = require('tilelive'),
-    tilecache = require('tilelive-cache')(tilelive, {size: 50}),
+    tilecache = require('tilelive-cache')(tilelive, {size: 200}),
     pg = require('pg').native,
     pgc,
     pgConnectionString = 'postgres://localhost:5432/gis';
@@ -141,15 +141,11 @@ app.use(function errorHandler(err, req, res, next) {
     res.render('error', { error: err });
 });
 
-var filename = __dirname + '/scripts/out/mapnik.xml';
-
+var filename = __dirname + '/data/napa/mapnik.xml';
 tilecache.load('mapnik://' + filename, function(err, source) {
     if (err) { throw err; }
-    app.get('/:z/:x/:y.*', function(req, res) {
+    app.get('/napa/:z/:x/:y.*', function(req, res) {
         source.getTile(req.param('z'), req.param('x'), req.param('y'), function(err, tile, headers) {
-            // `err` is an error object when generation failed, otherwise null.
-            // `tile` contains the compressed image file as a Buffer
-            // `headers` is a hash with HTTP headers for the image.
             if (!err) {
                 res.send(tile);
             } else {
@@ -158,6 +154,36 @@ tilecache.load('mapnik://' + filename, function(err, source) {
         });
     });
 });
+
+var filename = __dirname + '/data/buraydah/mapnik.xml';
+tilecache.load('mapnik://' + filename, function(err, source) {
+    if (err) { throw err; }
+    app.get('/buraydah/:z/:x/:y.*', function(req, res) {
+        source.getTile(req.param('z'), req.param('x'), req.param('y'), function(err, tile, headers) {
+            if (!err) {
+                res.send(tile);
+            } else {
+                res.send('Tile rendering error: ' + err + '\n');
+            }
+        });
+    });
+});
+
+var filename = __dirname + '/data/countries/mapnik.xml';
+tilecache.load('mapnik://' + filename, function(err, source) {
+    if (err) { throw err; }
+    app.get('/countries/:z/:x/:y.*', function(req, res) {
+        source.getTile(req.param('z'), req.param('x'), req.param('y'), function(err, tile, headers) {
+            if (!err) {
+                res.send(tile);
+            } else {
+                res.send('Tile rendering error: ' + err + '\n');
+            }
+        });
+    });
+});
+
+
 
 
 app.listen(3000);
