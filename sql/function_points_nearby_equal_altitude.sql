@@ -29,7 +29,7 @@ $$ LANGUAGE plpgsql;
     -- ST_SetSRID(ST_MakePoint(
             -- -122.14861392974855,
             -- 38.328763418388334
-    -- ), 4269),
+    -- ), 4326),
     -- 'napa');
 
 SELECT
@@ -39,14 +39,14 @@ SELECT
         ST_SetSRID(ST_MakePoint(
                 -122.14861392974855,
                 38.328763418388334
-        ), 4269)
+        ), 4326)
     ) AS dist
 
     FROM points_nearby_equal_altitude(
     ST_SetSRID(ST_MakePoint(
             -122.14861392974855,
             38.328763418388334
-    ), 4269),
+    ), 4326),
     'napa')
 
     ORDER BY dist ASC

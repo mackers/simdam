@@ -56,7 +56,7 @@ BEGIN
             st_makepoint(
                 ST_RasterToWorldCoordx(io, columnx, rowy),
                 ST_RasterToWorldCoordy(io, columnx, rowy)),
-            4269),
+            4326),
         dam_crest);
 
     -- raise notice '%,% <-- spherical distance from dam crest: %', columnx, rowy, distance_from_dam;
@@ -143,7 +143,7 @@ BEGIN
 
     mask := ST_AddBand(mask,'32BF'::text, 0);
     mask := ST_SetBandNoDataValue(mask, 0);
-    mask := ST_SetSrid(mask, 4269);
+    mask := ST_SetSrid(mask, 4326);
 
     update dams set scratch = mask where id = dam_id;
 
@@ -305,7 +305,7 @@ BEGIN
                         ST_RasterToWorldCoordX(rast, 0, 0),
                         ST_RasterToWorldCoordY(rast, 0, 0)
                     ),
-                    4269
+                    4326
                 )
             ),
             st_asgeojson(ST_SetSRID(
@@ -313,7 +313,7 @@ BEGIN
                         ST_RasterToWorldCoordX(rast, w, h),
                         ST_RasterToWorldCoordY(rast, w, h)
                     ),
-                    4269
+                    4326
                 )
             )
             from dams

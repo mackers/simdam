@@ -14,12 +14,40 @@ pgc.connect();
 require('tilelive-mapnik').registerProtocols(tilelive);
 app.use(express.static(__dirname + '/public'));
 
+app.get('/study_areas', function (req, res) {
+    var qstr = 'select name, description, attribution, st_asgeojson(lowerleft) as lowerleft, st_asgeojson(upperright) as upperright from study_areas()';
+
+    var q = pgc.query(qstr);
+    var r = [];
+
+    q.on('error', function(error) {
+        console.log(error);
+    });
+
+    q.on('row', function(row, result) {
+        r.push({
+            name: row.name,
+            description: row.description,
+            attribution: row.attribution,
+            lowerleft: JSON.parse(row.lowerleft),
+            upperright: JSON.parse(row.upperright)
+        });
+        result.addRow(row);
+    });
+
+    q.on('end', function(result) {
+        console.log(result.rows.length + ' rows were received');
+
+        res.json({'result': 'ok', 'payload': r});
+    });
+});
+
 app.get('/napa/points_at_level_near/:lat/:lng/', function (req, res) {
     var qstr = 'select * from points_nearby_equal_altitude(ST_SetSRID(ST_MakePoint(' +
         req.param('lng') +
         ', ' +
         req.param('lat') +
-        '), 4269), \'napa\')';
+        '), 4326), \'napa\')';
 
     console.log(qstr);
 
@@ -51,7 +79,7 @@ app.post('/napa/save_dam_crest/:startlat/:startlng/:endlat/:endlng', function (r
     var qstr = 'insert into dams (user_id, study_area, crest) values (0, 1, ' +
         'ST_GeomFromText(\'LINESTRING(' +
         req.param('startlng') + ' ' + req.param('startlat') + ', ' +
-        req.param('endlng') + ' ' + req.param('endlat') + ')\', 4269)) ' +
+        req.param('endlng') + ' ' + req.param('endlat') + ')\', 4326)) ' +
         ' RETURNING id';
 
     console.log(qstr);

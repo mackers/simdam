@@ -21,8 +21,8 @@ if [ ! -d "$OUT_DIRECTORY" ]; then
   exit;
 fi
 
-# reproject ned dem to web mercator
-gdalwarp -r bilinear -s_srs EPSG:4326 -t_srs EPSG:3857 $1 $OUT_DEM_WEBMERC
+# reproject to web mercator
+gdalwarp -r bilinear -s_srs EPSG:4326 -t_srs EPSG:4269 $1 $OUT_DEM_WEBMERC
 
 # create psql import script
 #raster2pgsql -c -C $OUT_DEM_WEBMERC > $OUT_SQL

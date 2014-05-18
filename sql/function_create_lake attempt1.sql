@@ -27,7 +27,7 @@ BEGIN
         -- ST_SetSRID(ST_MakePoint(
                 -- -122.14861392974855,
                 -- 38.328763418388334
-        -- ), 4269),
+        -- ), 4326),
         -- 'napa');
 
     RAISE NOTICE 'start_point: %', ST_AsText(start_point);

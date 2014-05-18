@@ -2,37 +2,22 @@
 $(function () {
     'use strict';
 
+    var tilelayers = [];
+
+    tilelayers.push(new L.TileLayer('/countries/{z}/{x}/{y}.png',
+        {
+            maxZoom: 13
+            //attribution: 'TODO'
+        }
+    ));
+
     var map = new L.Map('map', {
-        layers: [
-            new L.TileLayer(
-                '/countries/{z}/{x}/{y}.png',
-                {
-                    maxZoom: 13
-                    //attribution: 'TODO'
-                }
-            ),
-
-                new L.TileLayer(
-                    '/napa/{z}/{x}/{y}.png',
-                    {
-                        bounds: [[38.2468, -122.256546], [38.5019673, -121.996994]],
-                        attribution: 'National Elevation Dataset 2013'
-                    }
-                ),
-
-                    new L.TileLayer(
-                    '/buraydah/{z}/{x}/{y}.png',
-                    {
-                        bounds: [[25.99508123, 43.489379], [26.4386062, 44.0029907]],
-                        attribution: 'WorldDEM 2014'
-                    }
-                )
-                ],
-                center: new L.LatLng(38.304722, -122.158889),
-                zoom: 13,
-                maxZoom: 20,
-                continuousWorld: true
-            });
+        layers: tilelayers,
+        center: new L.LatLng(38.304722, -122.158889),
+        zoom: 13,
+        maxZoom: 20,
+        continuousWorld: true
+    });
 
     var dams = [];
 
@@ -53,6 +38,31 @@ $(function () {
 
     var drawControl = new L.Control.Draw(options);
     map.addControl(drawControl);
+
+    $.get('/study_areas', function (data) {
+        if (data.result === 'error' || !data.payload) {
+            window.alert('Could not get study areas');
+        } else if (data.result === 'ok') {
+
+            for (var i = 0; i<data.payload.length; i++) {
+                console.log(data.payload[i].name);
+
+                new L.TileLayer(
+                    '/' + data.payload[i].name + '/{z}/{x}/{y}.png',
+                    {
+                        name: data.payload[i].description,
+                        bounds: [
+                            L.GeoJSON.coordsToLatLng(data.payload[i].lowerleft.coordinates, true),
+                            L.GeoJSON.coordsToLatLng(data.payload[i].upperright.coordinates, true)
+                        ],
+                        attribution: data.payload[i].attribution
+                    }
+                ).addTo(map);
+            }
+
+            //$(document).trigger('damfine:has_study_areas', {latlngs: latlngs});
+        }
+    });
 
     map.on('draw:created', function (e) {
         var type = e.layerType,

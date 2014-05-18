@@ -53,7 +53,7 @@ BEGIN
 
     update dams set scratch = io where id = dam_id;
 
-    -- raise notice 'out: %', st_asgeojson( st_setsrid(ST_Polygon(io), 4269) );
+    -- raise notice 'out: %', st_asgeojson( st_setsrid(ST_Polygon(io), 4326) );
 
     perform lake_floodfill(columnx+1, rowy, a, i, dam_id);
     perform lake_floodfill(columnx-1, rowy, a, i, dam_id);
@@ -220,7 +220,7 @@ BEGIN
     -- raise notice 'dam_crest_midpoint: %', st_asgeojson(dam_crest_midpoint);
     raise notice 'dam_crest: %', st_asgeojson(dam_crest);
 
-    fill_point := get_upstream_fill_point(1);
+    fill_point := get_upstream_fill_point(dam_id);
 
     raise notice 'fill_point: %', st_asgeojson(fill_point);
 
@@ -265,7 +265,7 @@ BEGIN
 
     select scratch into lake_rast from dams where id = dam_id;
 
-    lake_geom := st_setsrid(ST_Polygon(lake_rast), 4269);
+    lake_geom := st_setsrid(ST_Polygon(lake_rast), 4326);
 
     -- raise notice 'lake_geom: %', st_asgeojson(lake_geom);
 
