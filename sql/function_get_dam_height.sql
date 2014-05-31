@@ -68,5 +68,4 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-select dam_height(1);
 

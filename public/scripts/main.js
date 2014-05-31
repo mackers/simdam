@@ -19,7 +19,7 @@ $(function () {
         continuousWorld: true
     });
 
-    var dams = [];
+    var dams = window.dams = [];
 
     var options = {
         draw: {
@@ -112,9 +112,21 @@ $(function () {
                 dam.lakeLayer.addTo(map);
 
                 $(document).trigger('damfine:create_watershed', dam);
+                //$(document).trigger('damfine:get_lake_area', dam);
             }
         });
     });
+
+    $(document).on('damfine:get_lake_area', function (event, dam) {
+        $.get('/napa/get_lake_area/' + dam.id, function (data) {
+            if (data.result === 'error' || !data.payload) {
+                window.alert('Could not get lake area.');
+            } else if (data.result === 'ok') {
+                console.log('lake area is ' + data.area);
+            }
+        });
+    });
+
 
     $(document).on('damfine:create_watershed', function (event, dam) {
         console.log('will create watershed for dam id = ' + dam.id);
@@ -137,7 +149,7 @@ $(function () {
                 });
                 dam.watershedLayer.addTo(map);
 
-                $(document).trigger('damfine:create_dam', dam);
+                //$(document).trigger('damfine:create_dam', dam);
             }
         });
     });

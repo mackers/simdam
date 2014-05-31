@@ -12,13 +12,16 @@ DECLARE
 
 BEGIN
 
-    -- raise notice 'in lake_floodfill, altitude: %', a;
-  -- raise notice '%,% <-- this point is next', columnx, rowy;
+    -- raise notice '%,% <-- this point is next', columnx, rowy;
 
     select scratch into io from dams where id = dam_id;
 
     w := st_width(io);
     h := st_height(io);
+
+    if columnx < 0 then
+        -- raise notice 'columnx: %', columnx;
+    end if;
 
     if columnx < 0 or rowy < 0 or columnx > w or rowy > h then
         return;
@@ -85,6 +88,7 @@ DECLARE
     watershed_rast raster;
     dam_crest geometry;
     dam_crest_midpoint geometry;
+    dam_crest_interpolate_point geometry;
 BEGIN
     select study_area into study_area_id from dams where id = dam_id;
 
@@ -93,11 +97,9 @@ BEGIN
 
   -- raise notice 'midpoint: %', ST_asgeojson(dam_crest_midpoint);
 
-    select st_value(rast, dam_crest_midpoint) into altitude from areas where rid = study_area_id;
-
   -- raise notice 'altitude at midpoint: %', altitude;
 
-    select ST_Clip(rast, 1, ST_Expand(dam_crest_midpoint, 0.0015), true) into study_area_rast from areas where rid = study_area_id;
+    select ST_Clip(rast, 1, ST_Expand(dam_crest_midpoint, 0.003), true) into study_area_rast from areas where rid = study_area_id;
 
     -- create an empty raster, same size as study area
     -- select rast into study_area_rast from areas where rid = study_area_id;
@@ -116,20 +118,30 @@ BEGIN
 
     -- raise notice 'fill_point: %', st_asgeojson(fill_point);
 
-    columnx := ST_WorldToRasterCoordX(study_area_rast, dam_crest_midpoint);
-    rowy := ST_WorldToRasterCoordY(study_area_rast, dam_crest_midpoint);
 
     -- raise notice 'fill_point columnx: %', columnx;
     -- raise notice 'fill_point rowy: %', rowy;
 
     update dams set scratch = watershed_rast where id = dam_id;
 
-    perform watershed_floodfill(
-        columnx,
-        rowy,
-        altitude,
-        study_area_rast,
-        dam_id);
+
+    FOR i IN 1..3 LOOP
+        select st_line_interpolate_point(dam_crest, (i/3.0)) into dam_crest_interpolate_point;
+
+        columnx := ST_WorldToRasterCoordX(study_area_rast, dam_crest_interpolate_point);
+        rowy := ST_WorldToRasterCoordY(study_area_rast, dam_crest_interpolate_point);
+        select st_value(rast, dam_crest_midpoint) into altitude from areas where rid = study_area_id;
+
+        perform watershed_floodfill(
+            columnx,
+            rowy,
+            altitude,
+            study_area_rast,
+            dam_id);
+
+    END LOOP;
+
+
 
     select scratch into watershed_rast from dams where id = dam_id;
 
@@ -139,7 +151,11 @@ BEGIN
 
     update dams set watershed = watershed_geom where id = dam_id;
 
+    update dams set watershed = ST_Multi(st_union(watershed, lake2)) where id = dam_id;
+
   -- raise notice 'finished';
+
+    select watershed into watershed_geom from dams where id = dam_id;
 
     return watershed_geom;
 
@@ -147,5 +163,27 @@ END;
 $$ LANGUAGE plpgsql;
 
 select st_asgeojson(create_watershed(1));
--- update dams set scratch = create_composite_raster(1) where id = 1;
+
+
+-- CREATE OR REPLACE FUNCTION sample_callbackfunc(value double precision[][][], pos integer[][], VARIADIC userargs text[])
+	-- RETURNS double precision
+	-- AS $$
+	-- BEGIN
+        -- raise notice '%, %: %', pos[0][1], pos[0][2], value;
+        -- raise notice 'userargs: %', userargs;
+		-- RETURN 0;
+	-- END;
+	-- $$ LANGUAGE 'plpgsql' IMMUTABLE;
+
+-- select st_mapalgebra(
+    -- rast,
+    -- 1,
+    -- 'sample_callbackfunc(double precision[], int[], text[])'::regprocedure,
+    -- NULL,
+    -- 'FIRST',
+    -- NULL,
+    -- 0,
+    -- 0,
+    -- '1')
+    -- from dams where id = 1;
 

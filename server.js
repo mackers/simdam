@@ -135,6 +135,37 @@ app.get('/napa/create_lake/:dam_id', function (req, res) {
     });
 });
 
+app.get('/napa/get_lake_area/:dam_id', function (req, res) {
+    var qstr = 'select st_area(lake2) as area from dams where id = ' + req.param('dam_id');
+
+    console.log(qstr);
+
+    var q = pgc.query(qstr);
+    var r = [];
+
+    q.on('error', function(error) {
+        console.log(error);
+        res.send(500, {'result': 'error'});
+    });
+
+    var area;
+
+    q.on('row', function(row, result) {
+        if (row.area) {
+            area = row.area;
+        }
+    });
+
+    q.on('end', function(result) {
+        if (area) {
+            res.json({'result': 'ok', 'payload': area});
+        } else {
+            res.json({'result': 'error'});
+        }
+    });
+});
+
+
 app.get('/napa/create_dam/:dam_id', function (req, res) {
     var qstr = 'select * from dam_as_png(' + req.param('dam_id') + ')';
 
@@ -189,7 +220,7 @@ app.get('/napa/create_watershed/:dam_id', function (req, res) {
         if (watershed) {
             res.json({'result': 'ok', 'payload': watershed});
         } else {
-            res.json({'result': 'wait'});
+            res.json({'result': 'error'});
         }
     });
 });
