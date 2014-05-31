@@ -164,10 +164,43 @@ app.get('/napa/create_dam/:dam_id', function (req, res) {
 });
 
 
+app.get('/napa/create_watershed/:dam_id', function (req, res) {
+    var qstr = 'select st_asgeojson(create_watershed(' + req.param('dam_id') + ')) as geojson';
+
+    console.log(qstr);
+
+    var q = pgc.query(qstr);
+    var r = [];
+
+    q.on('error', function(error) {
+        console.log(error);
+        res.send(500, {'result': 'error'});
+    });
+
+    var watershed;
+
+    q.on('row', function(row, result) {
+        if (row.geojson) {
+            watershed = JSON.parse(row.geojson);
+        }
+    });
+
+    q.on('end', function(result) {
+        if (watershed) {
+            res.json({'result': 'ok', 'payload': watershed});
+        } else {
+            res.json({'result': 'wait'});
+        }
+    });
+});
+
+
 app.use(function errorHandler(err, req, res, next) {
     res.status(500);
     res.render('error', { error: err });
 });
+
+// TODO  add study areas automagically
 
 var filename = __dirname + '/data/napa/mapnik.xml';
 tilecache.load('mapnik://' + filename, function(err, source) {

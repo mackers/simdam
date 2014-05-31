@@ -111,10 +111,37 @@ $(function () {
                 dam.lakeLayer = L.geoJson(data.payload);
                 dam.lakeLayer.addTo(map);
 
+                $(document).trigger('damfine:create_watershed', dam);
+            }
+        });
+    });
+
+    $(document).on('damfine:create_watershed', function (event, dam) {
+        console.log('will create watershed for dam id = ' + dam.id);
+        
+        $.get('/napa/create_watershed/' + dam.id, function (data) {
+            if (data.result === 'error' || !data.payload) {
+                window.alert('Could not create a watershed model at this location');
+            } else if (data.result === 'ok') {
+                // create lake layer from geojson payload
+                dam.watershedLayer = L.geoJson(data.payload);
+                dam.watershedLayer.setStyle(function() {
+                    return {
+                        weight: 2,
+                        opacity: 1,
+                        color: 'white',
+                        dashArray: '3',
+                        fillOpacity: 0.3,
+                        fillColor: '#666666'
+                    };
+                });
+                dam.watershedLayer.addTo(map);
+
                 $(document).trigger('damfine:create_dam', dam);
             }
         });
     });
+
 
     $(document).on('damfine:create_dam', function (event, dam) {
         console.log('will create dam for dam id = ' + dam.id);
