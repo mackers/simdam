@@ -324,7 +324,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- select create_dam_and_slope_raster(1);
+select create_dam_and_slope_raster(1);
 -- select dam_as_png(1);
 
 
