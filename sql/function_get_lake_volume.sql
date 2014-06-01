@@ -21,7 +21,7 @@ BEGIN
 
     lake_alt := alt_at_crest - 1;
 
-    raise notice 'lake alt: %', lake_alt;
+    -- raise notice 'lake alt: %', lake_alt;
 
     -- create lake raster
 
@@ -39,8 +39,8 @@ BEGIN
         ST_PixelAsPoint(lake_rast, 0, 1)::geography
     );
     
-    raise notice 'pixel size in metres: %', pix_m_y;
-    raise notice 'pixel size in metres: %', pix_m_x;
+    -- raise notice 'pixel size in metres: %', pix_m_y;
+    -- raise notice 'pixel size in metres: %', pix_m_x;
 
     -- preform map algebra on lake_rast and study_area_rast.
 
