@@ -111,7 +111,7 @@ $(function () {
                 dam.lakeLayer = L.geoJson(data.payload);
                 dam.lakeLayer.addTo(map);
 
-                $(document).trigger('damfine:create_watershed', dam);
+                $(document).trigger('damfine:create_dam', dam);
                 //$(document).trigger('damfine:get_lake_area', dam);
             }
         });
@@ -148,8 +148,6 @@ $(function () {
                     };
                 });
                 dam.watershedLayer.addTo(map);
-
-                //$(document).trigger('damfine:create_dam', dam);
             }
         });
     });
@@ -171,6 +169,8 @@ $(function () {
                     imageBounds);
                 dam.damLayer.addTo(map);
             }
+
+            $(document).trigger('damfine:create_watershed', dam);
         });
     });
 

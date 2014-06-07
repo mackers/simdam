@@ -71,6 +71,7 @@ $$ LANGUAGE plpgsql;
 
 
 
+select create_dam_height_raster(1);
 select create_dam_height_const_raster(1);
 
 

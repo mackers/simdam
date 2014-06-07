@@ -324,8 +324,79 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-select create_dam_and_slope_raster(1);
+-- select create_dam_and_slope_raster(1);
 -- select dam_as_png(1);
 
 
 
+
+CREATE OR REPLACE FUNCTION dam_height_as_png (dam_id integer)
+RETURNS table (dam text, upperleft text, lowerright text) AS $$
+
+DECLARE
+    h integer;
+    w integer;
+BEGIN
+
+    perform create_dam_and_slope_raster(dam_id);
+    perform create_dam_height_const_raster(dam_id);
+
+    select st_width(dam_height_const_rast) into w from dams where id = dam_id;
+    select st_height(dam_height_const_rast) into h from dams where id = dam_id;
+
+    return query (
+        select
+            'data:image/png;base64,' ||
+            encode(
+                st_aspng(
+                    st_colormap(
+                        st_resize(
+                            dam_height_const_rast,
+                            500,
+                            500
+                        ),
+                        1,
+'18 102 37 6 255
+16 153 52 4 255
+14 204 76 2 255
+12 236 112 20 255
+10 254 153 41 255
+8 254 196 79 255
+6 254 227 145 255
+4 255 247 188 255
+2 255 255 229 255
+nv 0 0 0 0
+',
+                        'NEAREST'
+                    ),
+                    ARRAY['ZLEVEL=1']
+                    ),
+                'base64'
+                ),
+            st_asgeojson(
+                ST_SetSRID(
+                    ST_MakePoint(
+                        ST_RasterToWorldCoordX(dam_height_const_rast, 0, 0),
+                        ST_RasterToWorldCoordY(dam_height_const_rast, 0, 0)
+                    ),
+                    4326
+                )
+            ),
+            st_asgeojson(ST_SetSRID(
+                    ST_MakePoint(
+                        ST_RasterToWorldCoordX(dam_height_const_rast, w, h),
+                        ST_RasterToWorldCoordY(dam_height_const_rast, w, h)
+                    ),
+                    4326
+                )
+            )
+            from dams
+            where id = dam_id
+        );
+
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+select dam_height_as_png(1);

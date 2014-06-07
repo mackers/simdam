@@ -5,6 +5,7 @@ var express = require('express'),
     tilelive = require('tilelive'),
     tilecache = require('tilelive-cache')(tilelive, {size: 200}),
     pg = require('pg').native,
+    fs = require('fs'),
     pgc,
     pgConnectionString = 'postgres://localhost:5432/gis';
 
@@ -167,7 +168,7 @@ app.get('/napa/get_lake_area/:dam_id', function (req, res) {
 
 
 app.get('/napa/create_dam/:dam_id', function (req, res) {
-    var qstr = 'select * from dam_as_png(' + req.param('dam_id') + ')';
+    var qstr = 'select * from dam_height_as_png(' + req.param('dam_id') + ')';
 
     console.log(qstr);
 
@@ -183,6 +184,8 @@ app.get('/napa/create_dam/:dam_id', function (req, res) {
 
     q.on('row', function(row, result) {
         if (row.dam) {
+            fs.writeFileSync('/tmp/out.htm', '<img src="' + row.dam + '"/>');
+
             payload.dam = row.dam;
             payload.upperleft = JSON.parse(row.upperleft);
             payload.lowerright = JSON.parse(row.lowerright);
