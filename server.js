@@ -184,7 +184,7 @@ app.get('/napa/create_dam/:dam_id', function (req, res) {
 
     q.on('row', function(row, result) {
         if (row.dam) {
-            fs.writeFileSync('/tmp/out.htm', '<img src="' + row.dam + '"/>');
+            //fs.writeFileSync('/tmp/out.htm', '<img src="' + row.dam + '"/>');
 
             payload.dam = row.dam;
             payload.upperleft = JSON.parse(row.upperleft);
