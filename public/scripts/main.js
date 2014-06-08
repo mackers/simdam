@@ -150,21 +150,36 @@ $(function () {
                 });
                 dam.watershedLayer.addTo(map);
             }
+        });
+    });
 
-            dam.crestLayer.setStyle({opacity: 0});
+    $(document).on('damfine:get_dam_meta', function (event, dam) {
+        console.log('will get dam meta for dam id = ' + dam.id);
+        
+        $.get('/napa/get_dam_meta/' + dam.id, function (data) {
+            if (data.result === 'error' || !data.payload) {
+                window.alert('Could not get dam meta information.');
+            } else if (data.result === 'ok') {
+                dam.reservoirArea = data.payload.reservoir_area.toFixed(3);
+                dam.reservoirVolume = data.payload.reservoir_volume.toFixed(3);
+                dam.earthworksVolumeConst = data.payload.earthworks_volume_const.toFixed(3);
+                dam.earthworksVolumeFinal = data.payload.earthworks_volume.toFixed(3);
 
-            var source   = $('#popup-template').html();
-            var template = Handlebars.compile(source);
+                dam.crestLayer.setStyle({opacity: 0});
 
-            var context = {
-                reservoirArea: dam.reservoirArea,
-                reservoirVolume: dam.reservoirVolume,
-                earthworksVolumeConst: dam.earthworksVolumeConst,
-                earthworksVolumeFinal: dam.earthworksVolumeFinal,
-            };
+                var source   = $('#popup-template').html();
+                var template = Handlebars.compile(source);
 
-            dam.lakeLayer.bringToFront();
-            dam.lakeLayer.bindPopup(template(context), {maxWidth: 600}).openPopup();
+                var context = {
+                    reservoirArea: dam.reservoirArea,
+                    reservoirVolume: dam.reservoirVolume,
+                    earthworksVolumeConst: dam.earthworksVolumeConst,
+                    earthworksVolumeFinal: dam.earthworksVolumeFinal,
+                };
+
+                dam.marker = L.marker(dam.lakeLayer.getLayers()[0].getLatLngs()[0][0]).addTo(map);
+                dam.marker.bindPopup(template(context), {maxWidth: 600}).openPopup();
+            }
         });
     });
 
@@ -186,6 +201,7 @@ $(function () {
                 dam.damLayer.addTo(map);
             }
 
+            $(document).trigger('damfine:get_dam_meta', dam);
             $(document).trigger('damfine:create_watershed', dam);
         });
     });

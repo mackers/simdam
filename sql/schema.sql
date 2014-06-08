@@ -22,3 +22,9 @@ SELECT AddGeometryColumn('dams', 'watershed', 4326, 'MULTIPOLYGON', 2 );
 
 alter table areas add column description text;
 alter table areas add column attribution text;
+
+alter table dams add column reservoir_area float;
+alter table dams add column reservoir_volume float;
+alter table dams add column earthworks_volume float;
+alter table dams add column earthworks_volume_const float;
+

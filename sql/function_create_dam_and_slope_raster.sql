@@ -336,13 +336,30 @@ RETURNS table (dam text, upperleft text, lowerright text) AS $$
 DECLARE
     h integer;
     w integer;
+
+    reservoir_area1 double precision;
+    reservoir_volume1 double precision;
+    earthworks_volume1 double precision;
+    earthworks_volume_const1 double precision;
 BEGIN
 
     perform create_dam_and_slope_raster(dam_id);
+    perform create_dam_height_raster(dam_id);
     perform create_dam_height_const_raster(dam_id);
+
+    select st_area(lake2::geography) into reservoir_area1 from dams where id = dam_id;
+    select get_lake_volume(dam_id) into reservoir_volume1;
+    select get_dam_volume(dam_id) into earthworks_volume1;
+    select get_dam_volume_const(dam_id) into earthworks_volume_const1;
 
     select st_width(dam_height_const_rast) into w from dams where id = dam_id;
     select st_height(dam_height_const_rast) into h from dams where id = dam_id;
+
+    update dams set reservoir_area = reservoir_area1,
+        reservoir_volume = reservoir_volume1,
+        earthworks_volume = earthworks_volume1,
+        earthworks_volume_const = earthworks_volume_const1
+        where id = dam_id;
 
     return query (
         select

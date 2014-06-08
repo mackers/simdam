@@ -198,6 +198,31 @@ app.get('/napa/create_dam/:dam_id', function (req, res) {
 });
 
 
+app.get('/napa/get_dam_meta/:dam_id', function (req, res) {
+    var qstr = 'select reservoir_area, reservoir_volume, earthworks_volume, earthworks_volume_const from dams where id = ' + req.param('dam_id') + '';
+
+    console.log(qstr);
+
+    var q = pgc.query(qstr);
+    var r = [];
+
+    q.on('error', function(error) {
+        console.log(error);
+        res.send(500, {'result': 'error'});
+    });
+
+    var payload = {};
+
+    q.on('row', function(row, result) {
+        payload = row;
+    });
+
+    q.on('end', function(result) {
+        res.json({'result': 'ok', 'payload': payload});
+    });
+});
+
+
 app.get('/napa/create_watershed/:dam_id', function (req, res) {
     var qstr = 'select st_asgeojson(create_watershed(' + req.param('dam_id') + ')) as geojson';
 
