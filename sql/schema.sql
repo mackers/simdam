@@ -28,3 +28,8 @@ alter table dams add column reservoir_volume float;
 alter table dams add column earthworks_volume float;
 alter table dams add column earthworks_volume_const float;
 
+alter table dams add column crest_length double precision;
+alter table dams add column throwback double precision;
+alter table dams add column stephens_reservoir_volume double precision;
+alter table dams add column stephens_earthworks_volume double precision;
+
