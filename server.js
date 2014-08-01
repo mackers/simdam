@@ -37,18 +37,18 @@ app.get('/study_areas', function (req, res) {
     });
 
     q.on('end', function(result) {
-        console.log(result.rows.length + ' rows were received');
+        console.log(result.rows.length + ' study areas were received');
 
         res.json({'result': 'ok', 'payload': r});
     });
 });
 
-app.get('/napa/points_at_level_near/:lat/:lng/', function (req, res) {
+app.get('/buraydah/points_at_level_near/:lat/:lng/', function (req, res) {
     var qstr = 'select * from points_nearby_equal_altitude(ST_SetSRID(ST_MakePoint(' +
         req.param('lng') +
         ', ' +
         req.param('lat') +
-        '), 4326), \'napa\')';
+        '), 4326), \'buraydah\')';
 
     console.log(qstr);
 
@@ -73,11 +73,11 @@ app.get('/napa/points_at_level_near/:lat/:lng/', function (req, res) {
     });
 });
 
-app.post('/napa/save_dam_crest/:startlat/:startlng/:endlat/:endlng', function (req, res) {
+app.post('/buraydah/save_dam_crest/:startlat/:startlng/:endlat/:endlng', function (req, res) {
 
     // TODO user id
 
-    var qstr = 'insert into dams (user_id, study_area, crest) values (0, 1, ' +
+    var qstr = 'insert into dams (user_id, study_area, crest) values (0, 4, ' +
         'ST_GeomFromText(\'LINESTRING(' +
         req.param('startlng') + ' ' + req.param('startlat') + ', ' +
         req.param('endlng') + ' ' + req.param('endlat') + ')\', 4326)) ' +
@@ -106,7 +106,7 @@ app.post('/napa/save_dam_crest/:startlat/:startlng/:endlat/:endlng', function (r
 });
 
 
-app.get('/napa/create_lake/:dam_id', function (req, res) {
+app.get('/buraydah/create_lake/:dam_id', function (req, res) {
     var qstr = 'select st_asgeojson(create_lake(' + req.param('dam_id') + ')) as geojson';
 
     console.log(qstr);
@@ -136,7 +136,7 @@ app.get('/napa/create_lake/:dam_id', function (req, res) {
     });
 });
 
-app.get('/napa/get_lake_area/:dam_id', function (req, res) {
+app.get('/buraydah/get_lake_area/:dam_id', function (req, res) {
     var qstr = 'select st_area(lake2) as area from dams where id = ' + req.param('dam_id');
 
     console.log(qstr);
@@ -167,7 +167,7 @@ app.get('/napa/get_lake_area/:dam_id', function (req, res) {
 });
 
 
-app.get('/napa/create_dam/:dam_id', function (req, res) {
+app.get('/buraydah/create_dam/:dam_id', function (req, res) {
     var qstr = 'select * from dam_height_as_png(' + req.param('dam_id') + ')';
 
     console.log(qstr);
@@ -198,7 +198,7 @@ app.get('/napa/create_dam/:dam_id', function (req, res) {
 });
 
 
-app.get('/napa/get_dam_meta/:dam_id', function (req, res) {
+app.get('/buraydah/get_dam_meta/:dam_id', function (req, res) {
     var qstr = 'select reservoir_area, reservoir_volume, earthworks_volume, earthworks_volume_const from dams where id = ' + req.param('dam_id') + '';
 
     console.log(qstr);
@@ -223,7 +223,7 @@ app.get('/napa/get_dam_meta/:dam_id', function (req, res) {
 });
 
 
-app.get('/napa/create_watershed/:dam_id', function (req, res) {
+app.get('/buraydah/create_watershed/:dam_id', function (req, res) {
     var qstr = 'select st_asgeojson(create_watershed(' + req.param('dam_id') + ')) as geojson';
 
     console.log(qstr);
@@ -289,6 +289,21 @@ tilecache.load('mapnik://' + filename, function(err, source) {
     });
 });
 
+var filename = __dirname + '/data/switzerland/mapnik.xml';
+tilecache.load('mapnik://' + filename, function(err, source) {
+    if (err) { throw err; }
+    app.get('/switzerland/:z/:x/:y.*', function(req, res) {
+        source.getTile(req.param('z'), req.param('x'), req.param('y'), function(err, tile, headers) {
+            if (!err) {
+                res.send(tile);
+            } else {
+                res.send('Tile rendering error: ' + err + '\n');
+            }
+        });
+    });
+});
+
+
 var filename = __dirname + '/data/countries/mapnik.xml';
 tilecache.load('mapnik://' + filename, function(err, source) {
     if (err) { throw err; }
@@ -302,6 +317,7 @@ tilecache.load('mapnik://' + filename, function(err, source) {
         });
     });
 });
+
 
 
 

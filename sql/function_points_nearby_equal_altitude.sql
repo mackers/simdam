@@ -6,14 +6,16 @@ DECLARE
 
 BEGIN
 
-    -- RAISE NOTICE 'in points_nearby_equal_altitude with ref_point = %', ST_AsText(ref_point);
+    RAISE NOTICE 'in points_nearby_equal_altitude with ref_point = %', ST_AsText(ref_point);
 
-    SELECT ST_Value(rast, ref_point) INTO h FROM areas;
+    SELECT ST_Value(rast, ref_point) INTO h FROM areas where area_name = area;
+
+    RAISE NOTICE 'in points_nearby_equal_altitude with h = %', h;
 
     RETURN QUERY (
         WITH bar AS (
             WITH foo AS (
-                SELECT ST_Clip(rast, 1, ST_Expand(ref_point, 0.001), true) AS rast
+                SELECT ST_Clip(rast, 1, ST_Expand(ref_point, 0.01), true) AS rast
                 FROM areas
                 WHERE area_name = area
             )
@@ -25,6 +27,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+select * from points_nearby_equal_altitude(ST_SetSRID(ST_MakePoint(43.94411087036133, 26.270558478573598), 4326), 'buraydah')
+
 -- SELECT ST_AsText(point) FROM points_nearby_equal_altitude(
     -- ST_SetSRID(ST_MakePoint(
             -- -122.14861392974855,
@@ -32,23 +36,23 @@ $$ LANGUAGE plpgsql;
     -- ), 4326),
     -- 'napa');
 
-SELECT
-    ST_AsText(point),
-    ST_Distance(
-        point,
-        ST_SetSRID(ST_MakePoint(
-                -122.14861392974855,
-                38.328763418388334
-        ), 4326)
-    ) AS dist
+-- SELECT
+    -- ST_AsText(point),
+    -- ST_Distance(
+        -- point,
+        -- ST_SetSRID(ST_MakePoint(
+                -- -122.14861392974855,
+                -- 38.328763418388334
+        -- ), 4326)
+    -- ) AS dist
 
-    FROM points_nearby_equal_altitude(
-    ST_SetSRID(ST_MakePoint(
-            -122.14861392974855,
-            38.328763418388334
-    ), 4326),
-    'napa')
+    -- FROM points_nearby_equal_altitude(
+    -- ST_SetSRID(ST_MakePoint(
+            -- -122.14861392974855,
+            -- 38.328763418388334
+    -- ), 4326),
+    -- 'napa')
 
-    ORDER BY dist ASC
-    LIMIT 1;
+    -- ORDER BY dist ASC
+    -- LIMIT 1;
 

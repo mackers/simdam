@@ -13,8 +13,10 @@ $(function () {
 
     var map = window.map = new L.Map('map', {
         layers: tilelayers,
-        center: new L.LatLng(38.304722, -122.158889),
-        zoom: 13,
+        //center: new L.LatLng(38.304722, -122.158889),
+        //center: new L.LatLng(26.2705584785736, 43.9441108703613),
+        center: new L.LatLng(46.6576419461878, 6.53070016801585),
+        zoom: 20,
         maxZoom: 20,
         continuousWorld: true
     });
@@ -74,7 +76,7 @@ $(function () {
             var start = layer.getLatLngs()[0];
             var end = layer.getLatLngs()[1];
 
-            $.post('/napa/save_dam_crest/' +
+            $.post('/buraydah/save_dam_crest/' +
                 start.lat + '/' + start.lng + '/' +
                 end.lat + '/' + end.lng, function (data) {
                     if (data.result === 'error') {
@@ -104,7 +106,7 @@ $(function () {
     $(document).on('damfine:create_lake', function (event, dam) {
         console.log('will create lake for dam id = ' + dam.id);
         
-        $.get('/napa/create_lake/' + dam.id, function (data) {
+        $.get('/buraydah/create_lake/' + dam.id, function (data) {
             if (data.result === 'error' || !data.payload) {
                 window.alert('Could not create a lake model at this location');
             } else if (data.result === 'ok') {
@@ -119,7 +121,7 @@ $(function () {
     });
 
     $(document).on('damfine:get_lake_area', function (event, dam) {
-        $.get('/napa/get_lake_area/' + dam.id, function (data) {
+        $.get('/buraydah/get_lake_area/' + dam.id, function (data) {
             if (data.result === 'error' || !data.payload) {
                 window.alert('Could not get lake area.');
             } else if (data.result === 'ok') {
@@ -132,7 +134,7 @@ $(function () {
     $(document).on('damfine:create_watershed', function (event, dam) {
         console.log('will create watershed for dam id = ' + dam.id);
         
-        $.get('/napa/create_watershed/' + dam.id, function (data) {
+        $.get('/buraydah/create_watershed/' + dam.id, function (data) {
             if (data.result === 'error' || !data.payload) {
                 window.alert('Could not create a watershed model at this location');
             } else if (data.result === 'ok') {
@@ -156,7 +158,7 @@ $(function () {
     $(document).on('damfine:get_dam_meta', function (event, dam) {
         console.log('will get dam meta for dam id = ' + dam.id);
         
-        $.get('/napa/get_dam_meta/' + dam.id, function (data) {
+        $.get('/buraydah/get_dam_meta/' + dam.id, function (data) {
             if (data.result === 'error' || !data.payload) {
                 window.alert('Could not get dam meta information.');
             } else if (data.result === 'ok') {
@@ -187,7 +189,7 @@ $(function () {
     $(document).on('damfine:create_dam', function (event, dam) {
         console.log('will create dam for dam id = ' + dam.id);
         
-        $.get('/napa/create_dam/' + dam.id, function (data) {
+        $.get('/buraydah/create_dam/' + dam.id, function (data) {
             if (data.result === 'error' || !data.payload.dam) {
                 window.alert('Could not create a dam model at this location');
             } else if (data.result === 'ok') {
@@ -202,15 +204,15 @@ $(function () {
             }
 
             $(document).trigger('damfine:get_dam_meta', dam);
-            $(document).trigger('damfine:create_watershed', dam);
+            //$(document).trigger('damfine:create_watershed', dam);
         });
     });
 
 
     $(document).on('damfine:has_defined_crest_first_point', function (event, param1) {
-        // TODO replace 'napa' here with map name
+        // TODO replace 'buraydah' here with map name
 
-        $.get('/napa/points_at_level_near/' + param1.latlng.lat + '/' + param1.latlng.lng + '/', function (data) {
+        $.get('/buraydah/points_at_level_near/' + param1.latlng.lat + '/' + param1.latlng.lng + '/', function (data) {
             var latlngs = [];
 
             for (var i = 0; i<data.length; i++) {

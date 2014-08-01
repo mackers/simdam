@@ -36,8 +36,9 @@ based tool for designing landscapes of small earth dams.
 Requirements
 ------------
 
-# PostGIS
-# Mapnik
+PostGIS
+
+Mapnik
 
 
 Starting Simdam
